@@ -1,0 +1,137 @@
+module example
+
+
+// builds a pair
+public def pair(x, y) = [x,y]
+
+// first element of a pair
+public def fst(t) = t.get(0)
+
+// second element of a pair
+public def snd(t) = t.get(1)
+
+// device coordinates
+public def getCoordinates() = self.getCoordinates()
+
+
+// counts elapsed rounds
+public def elapsed() =
+    rep(n <- 0) { n+1 }
+
+
+// it preserves the value passed in the first round across following rounds
+public def constant(value) =
+    rep (old <- value) { old }
+
+
+// computes approximated distances (ABF algorithm).
+// isSource: whether the current device is a source
+// metric:   function returning distances to neighbours
+// returns:  length of the shortest path towards a source
+public def ABF(isSource, metric) =
+        // distance starts from infinity
+        rep (distance <- POSITIVE_INFINITY) {
+                mux (isSource) {
+                        // sources have distance zero
+                        0
+                } else {
+                        // others have the minimum across neighbours of their distance to a source plus the relative distance
+                        foldMin(POSITIVE_INFINITY, nbr(distance) + metric())
+                }
+        }
+
+//1:
+public def neighbourSelfCount()=sumHood(nbr(1))
+
+//2:
+public def neighbourSelfCountMa)= rep(n <- 0) { man, neighbourSelfCount()) }
+
+//3:
+public def neighbourNetCountMa)=rep(n <- 0) { man, maneighbourSelfCount(), maxHood(nbr(neighbourSelfCountMa)))  )) }
+
+//4:
+public def minNeighbourNearCoordinates()=rep(n <- pair(1,self.getCoordinates())) {snd(minHood( [nbr(pair(neighbourSelfCount(), getCoordinates())), pair(0,self.getCoordinates())]))}
+
+//5:
+public def maxnNeighbourNearCoordinates()=rep(n <- pair(1,self.getCoordinates())) {snd(maxHood( [nbr(pair(neighbourSelfCount(), getCoordinates())), pair(0,self.getCoordinates())]))}
+
+//6:
+public def computeForce(vector)=vector/(abs( sqrt ( fst(vector^2+ snd(vector)^2 )) )^3)
+
+public def main() {
+    env.put("language", "protelis");
+
+
+    // source is node 0 (standing in the middle)
+    let sourceID = 0;
+    let deviceID = self.getDeviceUID().getId();
+    let isSource = (deviceID == sourceID);
+
+
+    // export correct and estimated distances into the simulator
+    env.put("distance", self.distanceTo(sourceID));   // exact euclidean distance
+    env.put("abf", ABF(isSource, {self.nbrRange()})); // shortest-path estimated distance
+
+
+    // choose a random time between 0 and 200 in which to start moving
+    let timeToGo = constant(200*self.nextRandomDouble());
+    env.put("timeToGo", timeToGo); // memorizing it
+
+
+  
+    
+    //1: number of neighbours for self device    
+    env.put("neighbourSelfCount", neighbourSelfCount());
+    
+    //2: max ever number of neighbours for self
+        
+    env.put("neighbourSelfCountMax", neighbourSelfCountMa));
+    
+    //3: max number of neighbour a device in net ever had
+    env.put("neighbourNetCountMax", neighbourNetCountMa));
+    
+
+    // choose a place where to move, if it's time to do it
+    if (self.getCurrentTime() < timeToGo) {
+        // not time yet, doing nothing
+       0
+    } else {
+      // select a random target between [-4,-2] and [4,2]
+      // let target = constant([8*self.nextRandomDouble()-4, 4*self.nextRandomDouble()-2]);
+    
+     //4: target towards the minNeighboursNeighbour
+     // let target = constant(minNeighbourNearCoordinates());
+    
+     //5: target away from maxNeighboursNeighbour
+    // let target = constant(-1*(maxnNeighbourNearCoordinates()-self.getCoordinates()));
+    // env.put("target", target);
+    
+    //6: attracted by lowest neighbours neighbour repulsed by highest neighbours neighbour
+    // how to do sqrt and abs to compute attaction force?????
+    /*let attractVector = (snd(minNeighbourNearCoordinates()))-self.getCoordinates();
+    let attractionForce=computeForce(attractVector);
+    //repulsion like if attracted by the opposite
+    let repulseVector = (-1*(snd(maxnNeighbourNearCoordinates())-self.getCoordinates()));
+    let repulseForce=computeForce(repulseVector);
+    let target =( attractVector*attractionForce)+(repulseVector*repulseForce)+self.getCoordinates();
+    env.put("target", target);
+    */
+        
+    //7: repulse by every neighbour. integral calculus?? let's consider only projected point
+    let topWall=pair(fst(self.getCoordinates()), 3)-self.getCoordinates();
+    let bottomWall=pair(fst(self.getCoordinates()), -3)-self.getCoordinates();
+    let leftWall=pair(-4, snd(self.getCoordinates()))-self.getCoordinates();
+    let rightWall=pair(4, snd(self.getCoordinates()))-self.getCoordinates();
+    
+    let repulseVector=(-1*((nbr(getCoordinates())-getCoordinates())+ topWall+ bottomWall+leftWall+ rightWall));
+    let target= (computeForce((repulseVector))*(repulseVector))+self.getCoordinates();
+    
+    env.put("target", target);
+     0    
+    };
+
+      
+
+}
+
+main()
